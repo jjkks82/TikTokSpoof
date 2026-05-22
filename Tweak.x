@@ -1,29 +1,30 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
+#import <objc/message.h>
 
-// ========== AWEUserModel ==========
+// تعريفات مبدئية (لا نحتاجها بعد التعديل لكنها مفيدة)
+@class AWEUserModel;
+@class AWEProfileHeaderViewController;
+
+// ========== الخطافات الأساسية لنموذج المستخدم ==========
 %hook AWEUserModel
 - (long long)followerCount {
     return 5000001;
 }
-
 - (long long)followingCount {
     return 20;
 }
-
 - (BOOL)isVerifiedUser {
     return YES;
 }
-
 - (NSString *)uniqueID {
     return @"vi";
 }
-
 - (NSString *)nickname {
     return @"vi";
 }
 
-// إجبار تحديث البيانات عند تعيينها من المصدر
+// تأمين إعدادات المُعينات (عند محاولة التطبيق تغيير القيم)
 - (void)setFollowerCount:(long long)arg1 {
     %orig(5000001);
 }
@@ -41,34 +42,35 @@
 }
 %end
 
-// ========== AWEProfileHeaderViewController ==========
+// ========== تحديث الواجهة تلقائياً فور عرض البروفايل ==========
 %hook AWEProfileHeaderViewController
 - (void)viewDidLoad {
     %orig;
-    // تحديث الواجهة فوراً بعد التحميل
-    [self updateUIWithUserModel];
+    // استدعاء دالة التحديث بعد تحميل المشهد
+    [self _refreshProfile];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
-    [self updateUIWithUserModel];
+    // تحديث عند ظهور المشهد (مثلاً العودة من علامة تبويب أخرى)
+    [self _refreshProfile];
 }
 
 %new
-- (void)updateUIWithUserModel {
-    // الحصول على نموذج المستخدم الحالي وإعادة تعيينه لتحديث الواجهة
-    id userModel = [self valueForKey:@"_userModel"];
+- (void)_refreshProfile {
+    // استخدام id لتجنب أخطاء التجميع
+    id userModel = [(id)self valueForKey:@"_userModel"];
     if (userModel) {
-        // إعادة تعيين البيانات المعدلة صراحة
-        [userModel setFollowerCount:5000001];
-        [userModel setFollowingCount:20];
-        [userModel setIsVerifiedUser:YES];
-        [userModel setUniqueID:@"vi"];
-        [userModel setNickname:@"vi"];
+        // إعادة تعيين القيم المزيفة
+        objc_msgSend(userModel, @selector(setFollowerCount:), (long long)5000001);
+        objc_msgSend(userModel, @selector(setFollowingCount:), (long long)20);
+        objc_msgSend(userModel, @selector(setIsVerifiedUser:), YES);
+        objc_msgSend(userModel, @selector(setUniqueID:), @"vi");
+        objc_msgSend(userModel, @selector(setNickname:), @"vi");
         
-        // إخبار الواجهة بالتحديث إن أمكن
-        if ([self respondsToSelector:@selector(reloadData)]) {
-            [self performSelector:@selector(reloadData)];
+        // طلب إعادة تحميل الواجهة إن وُجدت هذه الدالة
+        if ([(id)self respondsToSelector:@selector(reloadData)]) {
+            [(id)self performSelector:@selector(reloadData)];
         }
     }
 }
