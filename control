@@ -1,0 +1,8 @@
+Package: com.majood.tiktokspoof
+Name: TikTokSpoof
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: TikTok Spoof Tweak by Majood
+Maintainer: Majood
+Author: Majood
+Section: Tweaks
